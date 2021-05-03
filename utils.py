@@ -9,6 +9,7 @@ from torch.utils.data import Dataset, DataLoader
 import time
 from skimage.util.shape import view_as_windows
 
+
 class eval_mode(object):
     def __init__(self, *models):
         self.models = models
@@ -132,18 +133,16 @@ class ReplayBuffer(Dataset):
         pos = obses.copy()
 
         obses = random_crop(obses, self.image_size)
-        next_obses = random_crop(next_obses, self.image_size)
+        next_obses = random_crop(next_obses, self.image_size)  # ZXP ???
         pos = random_crop(pos, self.image_size)
     
         obses = torch.as_tensor(obses, device=self.device).float()
-        next_obses = torch.as_tensor(
-            next_obses, device=self.device
-        ).float()
+        next_obses = torch.as_tensor(next_obses, device=self.device).float()
         actions = torch.as_tensor(self.actions[idxs], device=self.device)
         rewards = torch.as_tensor(self.rewards[idxs], device=self.device)
         not_dones = torch.as_tensor(self.not_dones[idxs], device=self.device)
-
         pos = torch.as_tensor(pos, device=self.device).float()
+
         cpc_kwargs = dict(obs_anchor=obses, obs_pos=pos,
                           time_anchor=None, time_pos=None)
 
@@ -245,7 +244,7 @@ def random_crop(imgs, output_size):
     h1 = np.random.randint(0, crop_max, n)
     # creates all sliding windows combinations of size (output_size)
     windows = view_as_windows(
-        imgs, (1, output_size, output_size, 1))[..., 0,:,:, 0]
+        imgs, (1, output_size, output_size, 1))[..., 0, :, :, 0]
     # selects a random window for each batch element
     cropped_imgs = windows[np.arange(n), w1, h1]
     return cropped_imgs

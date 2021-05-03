@@ -217,6 +217,8 @@ class CURL(nn.Module):
     def compute_logits(self, z_a, z_pos):
         """
         Uses logits trick for CURL:
+        # ZXP https://stats.stackexchange.com/questions/338285/how-does-the-subtraction-of-the-
+              logit-maximum-improve-learning/338293#338293?newreg=67630c1579494c0eb16272eef5ae903f
         - compute (B,B) matrix z_a (W z_pos.T)
         - positives are all diagonal elements
         - negatives are all other elements
@@ -226,6 +228,7 @@ class CURL(nn.Module):
         logits = torch.matmul(z_a, Wz)  # (B,B)
         logits = logits - torch.max(logits, 1)[0][:, None]
         return logits
+
 
 class CurlSacAgent(object):
     """CURL representation learning with SAC."""
@@ -291,12 +294,13 @@ class CurlSacAgent(object):
         self.critic_target.load_state_dict(self.critic.state_dict())
 
         # tie encoders between actor and critic, and CURL and critic
+        # ZXP!!!
         self.actor.encoder.copy_conv_weights_from(self.critic.encoder)
 
         self.log_alpha = torch.tensor(np.log(init_temperature)).to(device)
-        self.log_alpha.requires_grad = True
+        self.log_alpha.requires_grad = True  # ZXP ???
         # set target entropy to -|A|
-        self.target_entropy = -np.prod(action_shape)
+        self.target_entropy = -np.prod(action_shape)  # ZXP ???
         
         # optimizers
         self.actor_optimizer = torch.optim.Adam(
@@ -314,7 +318,8 @@ class CurlSacAgent(object):
         if self.encoder_type == 'pixel':
             # create CURL encoder (the 128 batch size is probably unnecessary)
             self.CURL = CURL(obs_shape, encoder_feature_dim,
-                        self.curl_latent_dim, self.critic,self.critic_target, output_type='continuous').to(self.device)
+                             self.curl_latent_dim, self.critic,
+                             self.critic_target, output_type='continuous').to(self.device)
 
             # optimizer for critic encoder for reconstruction loss
             self.encoder_optimizer = torch.optim.Adam(
@@ -433,7 +438,6 @@ class CurlSacAgent(object):
         if step % self.log_interval == 0:
             L.log('train/curl_loss', loss, step)
 
-
     def update(self, replay_buffer, L, step):
         if self.encoder_type == 'pixel':
             obs, action, reward, next_obs, not_done, cpc_kwargs = replay_buffer.sample_cpc()
@@ -462,7 +466,7 @@ class CurlSacAgent(object):
         
         if step % self.cpc_update_freq == 0 and self.encoder_type == 'pixel':
             obs_anchor, obs_pos = cpc_kwargs["obs_anchor"], cpc_kwargs["obs_pos"]
-            self.update_cpc(obs_anchor, obs_pos,cpc_kwargs, L, step)
+            self.update_cpc(obs_anchor, obs_pos, cpc_kwargs, L, step)
 
     def save(self, model_dir, step):
         torch.save(

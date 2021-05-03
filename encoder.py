@@ -16,7 +16,7 @@ OUT_DIM_64 = {2: 29, 4: 25, 6: 21}
 
 class PixelEncoder(nn.Module):
     """Convolutional encoder of pixels observations."""
-    def __init__(self, obs_shape, feature_dim, num_layers=2, num_filters=32,output_logits=False):
+    def __init__(self, obs_shape, feature_dim, num_layers=2, num_filters=32, output_logits=False):
         super().__init__()
 
         assert len(obs_shape) == 3
